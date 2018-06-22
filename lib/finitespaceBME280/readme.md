@@ -1,0 +1,1 @@
+Code copied from https://github.com/finitespace/BME280/
