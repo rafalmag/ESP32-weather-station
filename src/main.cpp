@@ -3,12 +3,17 @@
 #include "SSD1306Wire.h"
 // https://github.com/finitespace/BME280/
 #include <BME280I2C.h>
+#include <EnvironmentCalculations.h>
 #include <Wire.h>
 // http://oleddisplay.squix.ch/
 #include "font.h"
 
+// Connected to PIN 5 and 4. (For I2C is ok to reuse the same pins by many devices, eg. oled)
 BME280I2C bme; // Default : forced mode, standby time = 1000 ms
                // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off
+
+// altitude for Wroclaw
+#define altitudeM 117.17
 
 // Initialize the OLED display using Wire library
 // according to http://www.instructables.com/id/ESP32-With-Integrated-OLED-WEMOSLolin-Getting-Star/
@@ -24,7 +29,6 @@ void setup()
 
     display.init();
     display.flipScreenVertically();
-
 
     Wire.begin();
     while (!bme.begin())
@@ -57,12 +61,17 @@ void draw()
     BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
     BME280::PresUnit presUnit(BME280::PresUnit_hPa);
 
+    EnvironmentCalculations::AltitudeUnit envAltUnit = EnvironmentCalculations::AltitudeUnit_Meters;
+    EnvironmentCalculations::TempUnit envTempUnit = EnvironmentCalculations::TempUnit_Celsius;
+
     bme.read(pressure, temperature, humidity, tempUnit, presUnit);
+
+    float seaLevel = EnvironmentCalculations::EquivalentSeaLevelPressure(altitudeM, temperature, pressure, envAltUnit, envTempUnit);
 
     display.drawString(0, 1 * 16, String("temp    : ") + temperature + "*C");
     display.drawString(0, 0 * 16, String("humidity: ") + humidity + "%");
     display.drawString(0, 2 * 16, String("pressure: ") + pressure + "hPa");
-    display.drawString(0, 3 * 16, "Hello world 3");
+    display.drawString(0, 3 * 16, String("see pres: ") + seaLevel + "hPa");
 }
 
 void loop()
