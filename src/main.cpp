@@ -1,34 +1,41 @@
 
-// https://github.com/ThingPulse/esp8266-oled-ssd1306
-#include "SSD1306Wire.h"
+
+// temp + hum
 // https://github.com/finitespace/BME280/
 #include <BME280I2C.h>
-#include <EnvironmentCalculations.h>
+
+// co2
+// https://github.com/rafalmag/ESP32-MH-Z14A
+#include <co2FromAdc.h>
+
 #include <Wire.h>
-// http://oleddisplay.squix.ch/
-#include "font.h"
+
+// LCD
+#include <LiquidCrystal_I2C.h>
 
 // Connected to PIN 5 and 4. (For I2C is ok to reuse the same pins by many devices, eg. oled)
 BME280I2C bme; // Default : forced mode, standby time = 1000 ms
-               // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off
+// Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off
 
-// altitude for Wroclaw
-#define altitudeM 117.17
+BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
+BME280::PresUnit presUnit(BME280::PresUnit_hPa);
 
-// Initialize the OLED display using Wire library
-// according to http://www.instructables.com/id/ESP32-With-Integrated-OLED-WEMOSLolin-Getting-Star/
+#define LED 5 // on board LED for Lolin32
+Co2FromAdc co2FromAdc;
 
-// This ESP’s dedicated I2C pins are on GPIO 5 and 4 for data and clock respectively.
-SSD1306Wire display(0x3c, 5, 4);
+//set the LCD address to 0x27 for a 20 chars and 4 line display
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 void setup()
 {
+    pinMode(LED, OUTPUT);
+    digitalWrite(LED, LOW);
     Serial.begin(115200);
-    Serial.println("start");
-    Serial.println("Status\tHumidity (%)\tTemperature (C)\t(F)\tHeatIndex (C)\t(F)");
 
-    display.init();
-    display.flipScreenVertically();
+    co2FromAdc.init();
+
+    lcd.begin(21, 22); // initialize the lcd with SDA 21 and SCL 22 pins
+    lcd.backlight();
 
     Wire.begin();
     while (!bme.begin())
@@ -48,38 +55,30 @@ void setup()
     default:
         Serial.println("Found UNKNOWN sensor! Error!");
     }
-}
-
-void draw()
-{
-    // 128 x 64
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.setFont(Monospaced_plain_10);
-
-    float temperature(NAN), humidity(NAN), pressure(NAN);
-
-    BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
-    BME280::PresUnit presUnit(BME280::PresUnit_hPa);
-
-    EnvironmentCalculations::AltitudeUnit envAltUnit = EnvironmentCalculations::AltitudeUnit_Meters;
-    EnvironmentCalculations::TempUnit envTempUnit = EnvironmentCalculations::TempUnit_Celsius;
-
-    bme.read(pressure, temperature, humidity, tempUnit, presUnit);
-
-    float seaLevel = EnvironmentCalculations::EquivalentSeaLevelPressure(altitudeM, temperature, pressure, envAltUnit, envTempUnit);
-
-    display.drawString(0, 1 * 16, String("temp    : ") + temperature + "*C");
-    display.drawString(0, 0 * 16, String("humidity: ") + humidity + "%");
-    display.drawString(0, 2 * 16, String("pressure: ") + pressure + "hPa");
-    display.drawString(0, 3 * 16, String("see pres: ") + seaLevel + "hPa");
+    digitalWrite(LED, HIGH);
 }
 
 void loop()
 {
     Serial.println("next loop");
+    digitalWrite(LED, LOW);
+    int adcCo2 = co2FromAdc.getCO2();
+    int co2Perc = adcCo2 / 10; // / 1000 * 100% = 10
 
-    display.clear();
-    draw();
-    display.display();
-    delay(1000);
+    float temperature(NAN), humidity(NAN), pressure(NAN);
+
+    bme.read(pressure, temperature, humidity, tempUnit, presUnit);
+
+    lcd.setCursor(0, 0);
+    // lcd.print(String("Temp ") + temperature + "*C Hum " + humidity + "%");
+    lcd.printf("Temp %2.1f*C Hum %2.0f%% ", temperature, humidity);
+    lcd.setCursor(0, 1);
+    lcd.print("PM2.5: not impl");
+    lcd.setCursor(0, 2);
+    lcd.print("PM10 : not impl");
+    lcd.setCursor(0, 3);
+    lcd.printf("CO2 %4d ppm (%3d%%) ",adcCo2,co2Perc);
+
+    digitalWrite(LED, HIGH);
+    delay(5000);
 }
