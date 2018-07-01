@@ -13,7 +13,7 @@
 // LCD
 #include <LiquidCrystal_I2C.h>
 
-// Connected to PIN 5 and 4. (For I2C is ok to reuse the same pins by many devices, eg. oled)
+// Connected to PIN 5 and 4. (For I2C is ok to reuse the same pins by many devices, eg. oled,lcd)
 BME280I2C bme; // Default : forced mode, standby time = 1000 ms
 // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off
 
@@ -70,14 +70,13 @@ void loop()
     bme.read(pressure, temperature, humidity, tempUnit, presUnit);
 
     lcd.setCursor(0, 0);
-    // lcd.print(String("Temp ") + temperature + "*C Hum " + humidity + "%");
     lcd.printf("Temp %2.1f*C Hum %2.0f%% ", temperature, humidity);
     lcd.setCursor(0, 1);
     lcd.print("PM2.5: not impl");
     lcd.setCursor(0, 2);
     lcd.print("PM10 : not impl");
     lcd.setCursor(0, 3);
-    lcd.printf("CO2 %4d ppm (%3d%%) ",adcCo2,co2Perc);
+    lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
     digitalWrite(LED, HIGH);
     delay(5000);
