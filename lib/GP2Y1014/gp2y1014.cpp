@@ -13,7 +13,7 @@ float GP2Y1014::getDustDensity() {
 	digitalWrite(led_pin, LOW);
 	delayMicroseconds(SAMPLINGTIME);
 
-    uint32_t mVoltRaw = adc1_to_voltage(ADC1_CHANNEL_0, &characteristics);
+    uint32_t mVoltRaw = adc1_to_voltage(measure_channel, &characteristics);
 	delayMicroseconds(DELTATIME);
 
 	digitalWrite(led_pin, HIGH);

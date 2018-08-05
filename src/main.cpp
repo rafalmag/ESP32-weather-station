@@ -22,7 +22,7 @@ struct pms5003
 
 pms5003 pm;
 
-int readIter = 1;
+int readIter = 3;
 bool updatePmReads()
 {
     int reads = 0;
@@ -106,12 +106,12 @@ void setup()
     display.setFont(Monospaced_plain_10);
 
     display.clear();
-    display.drawString(0, 0 * 16, "Hello! Sleep 30s");
+    display.drawString(0, 0 * 16, "Hello! Sleep 5s");
     display.display();
 
     digitalWrite(setPin, HIGH);
     pms.wakeUp();
-    delay(30000);
+    delay(5000);
 
     display.clear();
     display.drawString(0, 0 * 16, "Hello! Ready!");
@@ -124,10 +124,14 @@ void draw()
     display.setTextAlignment(TEXT_ALIGN_LEFT);
     display.setFont(Monospaced_plain_10);
 
+    float a = max(gp2y1014.getDustDensity(), gp2y1014.getDustDensity());
+    float b = max(gp2y1014.getDustDensity(), gp2y1014.getDustDensity());
+    float dust = max(a, b);
+
     display.drawString(0, 0 * 16, String("PM 1.0: ") + pm.pm1 + "ug/m3");
     display.drawString(0, 1 * 16, String("PM 2.5: ") + pm.pm2 + "ug/m3");
     display.drawString(0, 2 * 16, String("PM 10 : ") + pm.pm10 + "ug/m3");
-    display.drawString(0, 3 * 16, String("GP2Y1014: ") + gp2y1014.getDustDensity() + "mV");
+    display.drawString(0, 3 * 16, String("GP2Y1014: ") + dust + "mV");
 }
 
 void loop()
@@ -135,12 +139,12 @@ void loop()
     bool status = updatePmReads();
     // if (status)
     // {
-        display.clear();
-        draw();
-        display.display();
+    display.clear();
+    draw();
+    display.display();
     // }
 
     // pms.sleep();
     // digitalWrite(setPin, LOW);
-    delay(5000);
+    delay(1000);
 }
