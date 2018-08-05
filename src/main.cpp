@@ -8,6 +8,8 @@
 // http://oleddisplay.squix.ch/
 #include "font.h"
 
+// WARN - PMS is using Serial RX/TX (1/3 pins) - so it must be disconnected during programming
+
 // violet wire 5V
 // orange wire GND
 PMS pms(Serial); // blue wire - TX (1), green wire - RX (3)
@@ -21,6 +23,7 @@ struct pms5003
 };
 
 pms5003 pm;
+float dust;
 
 int readIter = 3;
 bool updatePmReads()
@@ -124,25 +127,19 @@ void draw()
     display.setTextAlignment(TEXT_ALIGN_LEFT);
     display.setFont(Monospaced_plain_10);
 
-    float a = max(gp2y1014.getDustDensity(), gp2y1014.getDustDensity());
-    float b = max(gp2y1014.getDustDensity(), gp2y1014.getDustDensity());
-    float dust = max(a, b);
-
     display.drawString(0, 0 * 16, String("PM 1.0: ") + pm.pm1 + "ug/m3");
     display.drawString(0, 1 * 16, String("PM 2.5: ") + pm.pm2 + "ug/m3");
     display.drawString(0, 2 * 16, String("PM 10 : ") + pm.pm10 + "ug/m3");
-    display.drawString(0, 3 * 16, String("GP2Y1014: ") + dust + "mV");
+    display.drawString(0, 3 * 16, String("GP2Y1014: ") + dust + "ug/m3");
 }
 
 void loop()
 {
-    bool status = updatePmReads();
-    // if (status)
-    // {
+    updatePmReads();
+    dust = gp2y1014.readDustDensity();
     display.clear();
     draw();
     display.display();
-    // }
 
     // pms.sleep();
     // digitalWrite(setPin, LOW);
