@@ -3,6 +3,7 @@
 #include "SSD1306Wire.h"
 
 #include <PMS.h>
+#include <gp2y1014.h>
 
 // http://oleddisplay.squix.ch/
 #include "font.h"
@@ -87,6 +88,14 @@ bool updatePmReads()
 // This ESP’s dedicated I2C pins are on GPIO 5 and 4 for data and clock respectively.
 SSD1306Wire display(0x3c, 5, 4);
 
+// GP2Y1014:
+// "pin 1" white - 5V (through 150 Ohm to 5V; 220uF to GND)
+// "pin 2" blue - GND
+GP2Y1014 gp2y1014(14); // green "pin 3" - GPIO 14 (through logic conv)
+// "pin 4" yellow - GND
+// "pin 5" black - GPIO 39 (aka VN) (through logic conv) - GP2Y1014 lib will read it
+// "pin 6" red - VCC - 5V
+
 void setup()
 {
     Serial.begin(9600);
@@ -118,18 +127,18 @@ void draw()
     display.drawString(0, 0 * 16, String("PM 1.0: ") + pm.pm1 + "ug/m3");
     display.drawString(0, 1 * 16, String("PM 2.5: ") + pm.pm2 + "ug/m3");
     display.drawString(0, 2 * 16, String("PM 10 : ") + pm.pm10 + "ug/m3");
-    display.drawString(0, 3 * 16, "Hello world 3");
+    display.drawString(0, 3 * 16, String("GP2Y1014: ") + gp2y1014.getDustDensity() + "mV");
 }
 
 void loop()
 {
     bool status = updatePmReads();
-    if (status)
-    {
+    // if (status)
+    // {
         display.clear();
         draw();
         display.display();
-    }
+    // }
 
     // pms.sleep();
     // digitalWrite(setPin, LOW);
