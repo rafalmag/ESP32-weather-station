@@ -28,7 +28,7 @@ private:
 
   // https://cassiopeia.hk/dustsensor/
   static const int EXTRA_SLEEP_TIME_MS = 500; // 0 for GP2Y1010
-  static const int SAMPLES = 4;               // 20 for GP2Y1010
+  static const int SAMPLES = 1;               // 20 for GP2Y1010
 };
 
 #endif
