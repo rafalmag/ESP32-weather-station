@@ -13,7 +13,7 @@
 // violet wire 5V
 // orange wire GND
 PMS pms(Serial); // blue wire - TX (1), green wire - RX (3)
-int setPin = 16; // white wire
+int pmsEnabledPin = 16; // white wire
 
 PMS::DATA data;
 
@@ -112,9 +112,9 @@ void setup()
     display.drawString(0, 0 * 16, "Hello! Sleep 5s");
     display.display();
 
-    digitalWrite(setPin, HIGH);
+    digitalWrite(pmsEnabledPin, HIGH);
     pms.wakeUp();
-    delay(5000);
+    //delay(5000);
 
     display.clear();
     display.drawString(0, 0 * 16, "Hello! Ready!");
@@ -130,18 +130,22 @@ void draw()
     display.drawString(0, 0 * 16, String("PM 1.0: ") + pm.pm1 + "ug/m3");
     display.drawString(0, 1 * 16, String("PM 2.5: ") + pm.pm2 + "ug/m3");
     display.drawString(0, 2 * 16, String("PM 10 : ") + pm.pm10 + "ug/m3");
-    display.drawString(0, 3 * 16, String("GP2Y1014: ") + dust + "ug/m3");
+    display.drawString(0, 3 * 16, String("GP 2.5: ") + dust + "ug/m3");
 }
 
 void loop()
 {
+    // digitalWrite(pmsEnabledPin, HIGH);
+    // pms.wakeUp();
+    // delay(5000);
     updatePmReads();
-    dust = gp2y1014.readDustDensity();
+    // pms.sleep();
+    // digitalWrite(pmsEnabledPin, LOW);
+
+    dust = gp2y1014.readDustDensity(); // takes about 2s
+
     display.clear();
     draw();
     display.display();
 
-    // pms.sleep();
-    // digitalWrite(setPin, LOW);
-    delay(1000);
 }

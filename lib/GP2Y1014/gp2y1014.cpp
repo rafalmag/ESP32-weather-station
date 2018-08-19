@@ -20,6 +20,7 @@ float GP2Y1014::readDustDensity()
         digitalWrite(led_pin, HIGH); // on
         delayMicroseconds(SAMPLING_TIME_US);
 
+        // this method reads mV as ints! so precision better than 1mV does not make much sense
         uint32_t mVoltRaw;
         esp_adc_cal_get_voltage(adc_channel, &characteristics, &mVoltRaw);
         delayMicroseconds(DELTA_TIME_US);
