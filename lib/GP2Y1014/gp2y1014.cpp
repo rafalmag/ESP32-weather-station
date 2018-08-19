@@ -5,11 +5,11 @@ GP2Y1014::GP2Y1014(int ledPin)
 {
     led_pin = ledPin;
     pinMode(led_pin, OUTPUT);
-    adc1_config_width(ADC_WIDTH_BIT_11);                         //Range 10 - 0-1023 11 - 0-2047
-    adc1_config_channel_atten(measure_channel, ADC_ATTEN_DB_11); //ADC_ATTEN_DB_11 = 0-3,6V (or 3.9V??)
-    // esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_11, &characteristics);
+    adc1_config_width(adc_bits_width);                         
+    adc1_config_channel_atten(adc1_channel, adc_atten);
+    // esp_adc_cal_get_characteristics(adc_default_vref, adc_atten, adc_bits_width, &characteristics);
 
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_11, V_REF, &characteristics);
+    esp_adc_cal_characterize(adc_unit, adc_atten, adc_bits_width, adc_default_vref, &characteristics);
 }
 
 float GP2Y1014::readDustDensity()
@@ -21,7 +21,7 @@ float GP2Y1014::readDustDensity()
         delayMicroseconds(SAMPLING_TIME_US);
 
         uint32_t mVoltRaw;
-        esp_adc_cal_get_voltage(ADC_CHANNEL_3, &characteristics, &mVoltRaw);
+        esp_adc_cal_get_voltage(adc_channel, &characteristics, &mVoltRaw);
         delayMicroseconds(DELTA_TIME_US);
 
         digitalWrite(led_pin, LOW); // off
@@ -31,14 +31,12 @@ float GP2Y1014::readDustDensity()
     }
     mVolt = mVolt / SAMPLES;
 
-    //return mVolt * 5.0 / 3.3 ; //TODO breking change
-
     // calc dust density
     // 0.6V = 0ppm (output voltage at no dust)
     // +0.5V per +100ug/m3
     // 0.5V = 100ppm
 
-    float adjustedVoltageV = mVolt /* * 5.0 / 3.3 */ * 0.001;
+    float adjustedVoltageV = mVolt * 5.0 / 3.0 * 0.001;
     
     /**
      * https://www.pocketmagic.net/sharp-gp2y1010-dust-sensor/
