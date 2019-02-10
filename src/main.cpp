@@ -8,11 +8,9 @@
 // http://oleddisplay.squix.ch/
 #include "font.h"
 
-// WARN - PMS is using Serial RX/TX (1/3 pins) - so it must be disconnected during programming
-
 // violet wire 5V
 // orange wire GND
-PMS pms(Serial); // blue wire - TX (1), green wire - RX (3)
+PMS pms(Serial1);       // blue wire - TX (26), green wire - RX (25) - see init in setup method
 int pmsEnabledPin = 16; // white wire
 
 PMS::DATA data;
@@ -101,7 +99,8 @@ GP2Y1014 gp2y1014(14); // green "pin 3" - GPIO 14 (through logic conv)
 
 void setup()
 {
-    Serial.begin(9600);
+    // defaults copied from HardwareSerial.h, rx=25, tx=26
+    Serial1.begin(9600, SERIAL_8N1, 25, 26, false, 20000UL);
     display.init();
     display.flipScreenVertically();
 
@@ -147,5 +146,4 @@ void loop()
     display.clear();
     draw();
     display.display();
-
 }
