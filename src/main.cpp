@@ -1,4 +1,6 @@
-
+// Toggle below line to enable / disabledebug to serial
+#define SERIAL_DEBUG_ENABLED
+#include "debug.h"
 
 // temp + hum
 // https://github.com/finitespace/BME280/
@@ -13,7 +15,7 @@
 // LCD
 #include <LiquidCrystal_I2C.h>
 
-// Connected to PIN 5 and 4. (For I2C is ok to reuse the same pins by many devices, eg. oled,lcd)
+// Connected to 21(SDA), 22(SCL). (For I2C is ok to reuse the same pins by many devices, eg. oled,lcd)
 BME280I2C bme; // Default : forced mode, standby time = 1000 ms
 // Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off
 
@@ -25,6 +27,29 @@ Co2FromAdc co2FromAdc;
 
 //set the LCD address to 0x27 for a 20 chars and 4 line display
 LiquidCrystal_I2C lcd(0x27, 20, 4);
+
+void bmeInit()
+{
+    while (!bme.begin())
+    {
+        DebugPrint("Could not find BME280 sensor!");
+        delay(1000);
+    }
+
+#ifdef SERIAL_DEBUG_ENABLED
+    switch (bme.chipModel())
+    {
+    case BME280::ChipModel_BME280:
+        DebugPrint("Found BME280 sensor! Success.");
+        break;
+    case BME280::ChipModel_BMP280:
+        DebugPrint("Found BMP280 sensor! No Humidity available.");
+        break;
+    default:
+        DebugPrint("Found UNKNOWN sensor! Error!");
+    }
+#endif
+}
 
 void setup()
 {
@@ -38,29 +63,13 @@ void setup()
     lcd.backlight();
 
     Wire.begin();
-    while (!bme.begin())
-    {
-        Serial.println("Could not find BME280 sensor!");
-        delay(1000);
-    }
-
-    switch (bme.chipModel())
-    {
-    case BME280::ChipModel_BME280:
-        Serial.println("Found BME280 sensor! Success.");
-        break;
-    case BME280::ChipModel_BMP280:
-        Serial.println("Found BMP280 sensor! No Humidity available.");
-        break;
-    default:
-        Serial.println("Found UNKNOWN sensor! Error!");
-    }
+    bmeInit();
     digitalWrite(LED, HIGH);
 }
 
 void loop()
 {
-    Serial.println("next loop");
+    DebugPrint("next loop");
     digitalWrite(LED, LOW);
     int adcCo2 = co2FromAdc.getCO2();
     int co2Perc = adcCo2 / 10; // / 1000 * 100% = 10

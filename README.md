@@ -1,4 +1,4 @@
-# ESP32_weather_station
+# ESP32 weather station
 
 ## Hardware used:
 - ESP32 - Wemos Lolin32
