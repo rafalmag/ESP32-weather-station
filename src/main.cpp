@@ -32,7 +32,7 @@ void bmeInit()
 {
     while (!bme.begin())
     {
-        DebugPrint("Could not find BME280 sensor!");
+        DebugPrintln("Could not find BME280 sensor!");
         delay(1000);
     }
 
@@ -40,13 +40,13 @@ void bmeInit()
     switch (bme.chipModel())
     {
     case BME280::ChipModel_BME280:
-        DebugPrint("Found BME280 sensor! Success.");
+        DebugPrintln("Found BME280 sensor! Success.");
         break;
     case BME280::ChipModel_BMP280:
-        DebugPrint("Found BMP280 sensor! No Humidity available.");
+        DebugPrintln("Found BMP280 sensor! No Humidity available.");
         break;
     default:
-        DebugPrint("Found UNKNOWN sensor! Error!");
+        DebugPrintln("Found UNKNOWN sensor! Error!");
     }
 #endif
 }
@@ -59,17 +59,19 @@ void setup()
 
     co2FromAdc.init();
 
-    lcd.begin(21, 22); // initialize the lcd with SDA 21 and SCL 22 pins
+    // SDA 21, SCL 22 for I2C for lcd and bme
+    Wire.begin();
+    // LiquidCrystal_I2C 
+    lcd.init();
     lcd.backlight();
 
-    Wire.begin();
     bmeInit();
     digitalWrite(LED, HIGH);
 }
 
 void loop()
 {
-    DebugPrint("next loop");
+    DebugPrintln("next loop");
     digitalWrite(LED, LOW);
     int adcCo2 = co2FromAdc.getCO2();
     int co2Perc = adcCo2 / 10; // / 1000 * 100% = 10
