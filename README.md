@@ -2,7 +2,7 @@
 
 ## Hardware used:
 - ESP32 - Wemos Lolin32
-- PMS5003 connected to 16 (TX), 17 (RX) (Serial2), 5V (to be coded later)
+- PMS5003 connected to 17 (TX), 16 (RX) (Serial2), pms enable pin4, 5V
 - MH-Z14A - CO2 sensor connected to 36(VP) ADC pin, 5V
 - BME280 - temperature and humidity sensor connected to 21(SDA), 22(SCL) pins, 3.3V
 - Neopixels - for status indication, connected to pin 2, 5V (to be coded later)

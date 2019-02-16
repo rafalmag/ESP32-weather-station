@@ -59,6 +59,14 @@ void bmeInit()
 #endif
 }
 
+// GP2Y1014:
+// "pin 1" white - 5V (through 150 Ohm to 5V; 220uF to GND)
+// "pin 2" blue - GND
+GP2Y1014 gp2y1014(14); // green "pin 3" - GPIO 14 (through logic conv)
+// "pin 4" yellow - GND
+// "pin 5" black - GPIO 39 (aka VN) (through logic conv) - GP2Y1014 lib will read it
+// "pin 6" red - VCC - 5V
+
 void setup()
 {
     pinMode(LED, OUTPUT);
