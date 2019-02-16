@@ -1,149 +1,110 @@
+// Toggle below line to enable / disabledebug to serial
+#define SERIAL_DEBUG_ENABLED
+#include "debug.h"
 
-// https://github.com/ThingPulse/esp8266-oled-ssd1306
-#include "SSD1306Wire.h"
+// temp + hum
+// https://github.com/finitespace/BME280/
+#include <BME280I2C.h>
 
+// co2
+// https://github.com/rafalmag/ESP32-MH-Z14A
+#include <co2FromAdc.h>
+
+#include <Wire.h>
+
+// LCD
+#include <LiquidCrystal_I2C.h>
+
+// Connected to 21(SDA), 22(SCL). (For I2C is ok to reuse the same pins by many devices, eg. oled,lcd)
+BME280I2C bme; // Default : forced mode, standby time = 1000 ms
+// Oversampling = pressure ×1, temperature ×1, humidity ×1, filter off
+
+BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
+BME280::PresUnit presUnit(BME280::PresUnit_hPa);
+
+#define LED 5 // on board LED for Lolin32
+Co2FromAdc co2FromAdc;
+
+//set the LCD address to 0x27 for a 20 chars and 4 line display
+LiquidCrystal_I2C lcd(0x27, 20, 4);
+
+// PMS5003
 #include <PMS.h>
-#include <gp2y1014.h>
-
-// http://oleddisplay.squix.ch/
-#include "font.h"
-
 // violet wire 5V
 // orange wire GND
-PMS pms(Serial1);       // blue wire - TX (26), green wire - RX (25) - see init in setup method
-int pmsEnabledPin = 16; // white wire
+PMS pms(Serial2);      // blue wire - TX (17), green wire - RX (16)
+int pmsEnabledPin = 4; // white wire
+#include "pmsCalc.h"
 
-PMS::DATA data;
-
-struct pms5003
+void bmeInit()
 {
-    float pm1, pm2, pm10;
-};
+    while (!bme.begin())
+    {
+        DebugPrintln("Could not find BME280 sensor!");
+        delay(1000);
+    }
 
-pms5003 pm;
-float dust;
-
-int readIter = 3;
-bool updatePmReads()
-{
-    int reads = 0;
-    uint16_t min1 = 0, max1 = 0, sum1 = 0,
-             min2 = 0, max2 = 0, sum2 = 0,
-             min10 = 0, max10 = 0, sum10 = 0;
-    for (int i = 0; i < readIter; i++)
+#ifdef SERIAL_DEBUG_ENABLED
+    switch (bme.chipModel())
     {
-        pms.requestRead();
-        if (pms.read(data, 10000))
-        {
-            if (reads == 0)
-            {
-                min1 = data.PM_AE_UG_1_0;
-                max1 = data.PM_AE_UG_1_0;
-                sum1 = data.PM_AE_UG_1_0;
-                min2 = data.PM_AE_UG_2_5;
-                max2 = data.PM_AE_UG_2_5;
-                sum2 = data.PM_AE_UG_2_5;
-                min10 = data.PM_AE_UG_10_0;
-                max10 = data.PM_AE_UG_10_0;
-                sum10 = data.PM_AE_UG_10_0;
-            }
-            else
-            {
-                if (data.PM_AE_UG_1_0 < min1)
-                    min1 = data.PM_AE_UG_1_0;
-                if (max1 < data.PM_AE_UG_1_0)
-                    max1 = data.PM_AE_UG_1_0;
-                sum1 += data.PM_AE_UG_1_0;
-                if (data.PM_AE_UG_2_5 < min2)
-                    min2 = data.PM_AE_UG_2_5;
-                if (max2 < data.PM_AE_UG_2_5)
-                    max2 = data.PM_AE_UG_2_5;
-                sum2 += data.PM_AE_UG_2_5;
-                if (data.PM_AE_UG_10_0 < min10)
-                    min10 = data.PM_AE_UG_1_0;
-                if (max10 < data.PM_AE_UG_10_0)
-                    max10 = data.PM_AE_UG_10_0;
-                sum10 += data.PM_AE_UG_10_0;
-            }
-            reads++;
-        }
+    case BME280::ChipModel_BME280:
+        DebugPrintln("Found BME280 sensor! Success.");
+        break;
+    case BME280::ChipModel_BMP280:
+        DebugPrintln("Found BMP280 sensor! No Humidity available.");
+        break;
+    default:
+        DebugPrintln("Found UNKNOWN sensor! Error!");
     }
-    if (reads > 2)
-    {
-        pm.pm1 = (float)(sum1 - min1 - max1) / (float)(reads - 2);
-        pm.pm2 = (float)(sum2 - min2 - max2) / (float)(reads - 2);
-        pm.pm10 = (float)(sum10 - min10 - max10) / (float)(reads - 2);
-    }
-    else
-    {
-        pm.pm1 = min1;
-        pm.pm2 = min2;
-        pm.pm10 = min10;
-    }
-    return reads > 0;
+#endif
 }
-
-// Initialize the OLED display using Wire library
-// according to http://www.instructables.com/id/ESP32-With-Integrated-OLED-WEMOSLolin-Getting-Star/
-
-// This ESP’s dedicated I2C pins are on GPIO 5 and 4 for data and clock respectively.
-SSD1306Wire display(0x3c, 5, 4);
-
-// GP2Y1014:
-// "pin 1" white - 5V (through 150 Ohm to 5V; 220uF to GND)
-// "pin 2" blue - GND
-GP2Y1014 gp2y1014(14); // green "pin 3" - GPIO 14 (through logic conv)
-// "pin 4" yellow - GND
-// "pin 5" black - GPIO 39 (aka VN) (through logic conv) - GP2Y1014 lib will read it
-// "pin 6" red - VCC - 5V
 
 void setup()
 {
-    // defaults copied from HardwareSerial.h, rx=25, tx=26
-    Serial1.begin(9600, SERIAL_8N1, 25, 26, false, 20000UL);
-    display.init();
-    display.flipScreenVertically();
+    pinMode(LED, OUTPUT);
+    digitalWrite(LED, LOW);
+    Serial.begin(115200);
 
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.setFont(Monospaced_plain_10);
+    co2FromAdc.init();
 
-    display.clear();
-    display.drawString(0, 0 * 16, "Hello! Sleep 5s");
-    display.display();
+    // SDA 21, SCL 22 for I2C for lcd and bme
+    Wire.begin();
+    // LiquidCrystal_I2C
+    lcd.init();
+    lcd.backlight();
 
+    bmeInit();
+
+    // PMS5003
+    Serial2.begin(9600); // 16,17
     digitalWrite(pmsEnabledPin, HIGH);
     pms.wakeUp();
-    //delay(5000);
 
-    display.clear();
-    display.drawString(0, 0 * 16, "Hello! Ready!");
-    display.display();
-}
-
-void draw()
-{
-    // 128 x 64
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.setFont(Monospaced_plain_10);
-
-    display.drawString(0, 0 * 16, String("PM 1.0: ") + pm.pm1 + "ug/m3");
-    display.drawString(0, 1 * 16, String("PM 2.5: ") + pm.pm2 + "ug/m3");
-    display.drawString(0, 2 * 16, String("PM 10 : ") + pm.pm10 + "ug/m3");
-    display.drawString(0, 3 * 16, String("GP 2.5: ") + dust + "ug/m3");
+    digitalWrite(LED, HIGH);
 }
 
 void loop()
 {
-    // digitalWrite(pmsEnabledPin, HIGH);
-    // pms.wakeUp();
-    // delay(5000);
+    DebugPrintln("next loop");
+    digitalWrite(LED, LOW);
+
+    int adcCo2 = co2FromAdc.getCO2();
+    int co2Perc = adcCo2 / 10; // 1000ppm = 100%, so: div by 1000 mul by 100% = 10
+
+    float temperature(NAN), humidity(NAN), pressure(NAN);
+    bme.read(pressure, temperature, humidity, tempUnit, presUnit);
+
     updatePmReads();
-    // pms.sleep();
-    // digitalWrite(pmsEnabledPin, LOW);
 
-    dust = gp2y1014.readDustDensity(); // takes about 2s
+    lcd.setCursor(0, 0);
+    lcd.printf("Temp %2.1f*C Hum %2.0f%% ", temperature, humidity);
+    lcd.setCursor(0, 1);
+    lcd.printf("PM2.5: %3.0f ug/m3", pm.pm2);
+    lcd.setCursor(0, 2);
+    lcd.printf("PM10 : %3.0f ug/m3", pm.pm10);
+    lcd.setCursor(0, 3);
+    lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
-    display.clear();
-    draw();
-    display.display();
+    digitalWrite(LED, HIGH);
+    delay(5000);
 }
