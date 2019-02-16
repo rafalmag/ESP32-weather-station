@@ -28,6 +28,14 @@ Co2FromAdc co2FromAdc;
 //set the LCD address to 0x27 for a 20 chars and 4 line display
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 
+// PMS5003
+#include <PMS.h>
+// violet wire 5V
+// orange wire GND
+PMS pms(Serial2);      // blue wire - TX (17), green wire - RX (16)
+int pmsEnabledPin = 4; // white wire
+#include "pmsCalc.h"
+
 void bmeInit()
 {
     while (!bme.begin())
@@ -61,11 +69,17 @@ void setup()
 
     // SDA 21, SCL 22 for I2C for lcd and bme
     Wire.begin();
-    // LiquidCrystal_I2C 
+    // LiquidCrystal_I2C
     lcd.init();
     lcd.backlight();
 
     bmeInit();
+
+    // PMS5003
+    Serial2.begin(9600); // 16,17
+    digitalWrite(pmsEnabledPin, HIGH);
+    pms.wakeUp();
+
     digitalWrite(LED, HIGH);
 }
 
@@ -73,19 +87,21 @@ void loop()
 {
     DebugPrintln("next loop");
     digitalWrite(LED, LOW);
+
     int adcCo2 = co2FromAdc.getCO2();
-    int co2Perc = adcCo2 / 10; // / 1000 * 100% = 10
+    int co2Perc = adcCo2 / 10; // 1000ppm = 100%, so: div by 1000 mul by 100% = 10
 
     float temperature(NAN), humidity(NAN), pressure(NAN);
-
     bme.read(pressure, temperature, humidity, tempUnit, presUnit);
+
+    updatePmReads();
 
     lcd.setCursor(0, 0);
     lcd.printf("Temp %2.1f*C Hum %2.0f%% ", temperature, humidity);
     lcd.setCursor(0, 1);
-    lcd.print("PM2.5: not impl");
+    lcd.printf("PM2.5: %3.0f ug/m3", pm.pm2);
     lcd.setCursor(0, 2);
-    lcd.print("PM10 : not impl");
+    lcd.printf("PM10 : %3.0f ug/m3", pm.pm10);
     lcd.setCursor(0, 3);
     lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
