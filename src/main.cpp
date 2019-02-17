@@ -35,6 +35,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 PMS pms(Serial2);      // blue wire - TX (17), green wire - RX (16)
 int pmsEnabledPin = 4; // white wire
 #include "pmsCalc.h"
+PmsCalc pmsCalc(pms);
 
 void bmeInit()
 {
@@ -94,14 +95,14 @@ void loop()
     float temperature(NAN), humidity(NAN), pressure(NAN);
     bme.read(pressure, temperature, humidity, tempUnit, presUnit);
 
-    updatePmReads();
+    pmsCalc.updatePmReads();
 
     lcd.setCursor(0, 0);
     lcd.printf("Temp %2.1f*C Hum %2.0f%% ", temperature, humidity);
     lcd.setCursor(0, 1);
-    lcd.printf("PM2.5: %3.0f ug/m3", pm.pm2);
+    lcd.printf("PM2.5: %3.0f ug/m3", pmsCalc.getPm2());
     lcd.setCursor(0, 2);
-    lcd.printf("PM10 : %3.0f ug/m3", pm.pm10);
+    lcd.printf("PM10 : %3.0f ug/m3", pmsCalc.getPm10());
     lcd.setCursor(0, 3);
     lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
