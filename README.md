@@ -17,6 +17,7 @@
 - LCD brightness can be adjusted by photoresistor in modes:
   - through analog circuit - connected directly to the BC546 transistor
   - in digital way - photoresistor value can be read by ADC (32 pin) and the desired output value can be set by DAC_1 (25 pin) - also through BC546 transistor
+- neopixel data pin driven from 3.3V, however it is 5V logic level (according to docu 80%*Vcc=4V for high state) - it works somehow...
 
 ## Reference:
 ![esp32_2](wemos-lolin-2.png "ESP32")

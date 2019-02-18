@@ -37,12 +37,31 @@ int pmsEnabledPin = 4; // white wire
 #include "pmsCalc.h"
 PmsCalc pmsCalc(pms);
 
+// fastled
+#include "FastLED.h" // FastLED library.
+
+#if FASTLED_VERSION < 3001000
+#error "Requires FastLED 3.1 or later; check github for latest code."
+#endif
+
+#define NEOPIXEL_DATA_PIN 2
+#define LED_TYPE NEOPIXEL
+#define NUM_LEDS 8
+
+// Initialize LED array.
+struct CRGB leds[NUM_LEDS];
+
 void bmeInit()
 {
     while (!bme.begin())
     {
         DebugPrintln("Could not find BME280 sensor!");
         delay(1000);
+        if (millis() >= 10000)
+        {
+            DebugPrintln("Could not find BME280 sensor, giving up");
+            return;
+        }
     }
 
 #ifdef SERIAL_DEBUG_ENABLED
@@ -78,8 +97,14 @@ void setup()
 
     // PMS5003
     Serial2.begin(9600); // 16,17
-    digitalWrite(pmsEnabledPin, HIGH);
+    // digitalWrite(pmsEnabledPin, HIGH);
     pms.wakeUp();
+
+    // FastLED
+    LEDS.addLeds<LED_TYPE, NEOPIXEL_DATA_PIN>(leds, NUM_LEDS);
+    FastLED.setBrightness(40);
+    set_max_power_in_volts_and_milliamps(5, 300); // FastLED Power management set at 5V, 300mA.
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
 
     digitalWrite(LED, HIGH);
 }
@@ -106,6 +131,11 @@ void loop()
     lcd.setCursor(0, 3);
     lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+        leds[i] = CRGB(0, 66, 26); // dark green
+    }
+    FastLED.show(); // Power managed display
     digitalWrite(LED, HIGH);
     delay(5000);
 }
