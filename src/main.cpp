@@ -102,7 +102,7 @@ void setup()
 
     // FastLED
     LEDS.addLeds<LED_TYPE, NEOPIXEL_DATA_PIN>(leds, NUM_LEDS);
-    FastLED.setBrightness(40);
+    FastLED.setBrightness(11);
     set_max_power_in_volts_and_milliamps(5, 300); // FastLED Power management set at 5V, 300mA.
     fill_solid(leds, NUM_LEDS, CRGB::Black);
 
@@ -131,10 +131,14 @@ void loop()
     lcd.setCursor(0, 3);
     lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
-    for (int i = 0; i < NUM_LEDS; i++)
-    {
-        leds[i] = CRGB(0, 66, 26); // dark green
-    }
+    leds[0] = CRGB(0, 66, 26); // dark green
+    leds[1] = CRGB(0, 66, 26); // dark green
+    leds[2] = CRGB::Black;
+    leds[3] = CRGB(0, 255, 26);
+    leds[4] = CRGB(0, 255, 26);
+    leds[5] = CRGB::Black;
+    leds[6] = CRGB(120, 0, 0);
+    leds[7] = CRGB(120, 0, 0);
     FastLED.show(); // Power managed display
     digitalWrite(LED, HIGH);
     delay(5000);
