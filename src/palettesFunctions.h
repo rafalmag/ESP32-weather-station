@@ -38,7 +38,7 @@ CRGB co2ppmToColor(int ppm)
 // orange 242,147,5
 // red-pink 232,65,111
 
-// DEFINE_GRADIENT_PALETTE(pm25_gp){
+// DEFINE_GRADIENT_PALETTE(pm2_gp){
 //     0, 121, 188, 106,  // green
 //     15, 121, 188, 106, // green
 //     16, 187,207,76,   // lime green
@@ -49,7 +49,7 @@ CRGB co2ppmToColor(int ppm)
 //     110, 242,147,5,    // orange
 //     111, 232,65,111,    // red-pink
 //     255, 232,65,111};   // red-pink
-// CRGBPalette16 pm25_p = pm25_gp;
+// CRGBPalette16 pm2_p = pm2_gp;
 
 // DEFINE_GRADIENT_PALETTE(pm10_gp){
 //     0, 121, 188, 106,  // green
@@ -62,7 +62,7 @@ CRGB co2ppmToColor(int ppm)
 //     180, 242,147,5,    // orange
 //     181, 232,65,111,    // red-pink
 //     255, 232,65,111};   // red-pink
-// CRGBPalette16 pm25_p = pm25_gp;
+// CRGBPalette16 pm2_p = pm2_gp;
 
 DEFINE_GRADIENT_PALETTE(caqi_gp){
     0, 121, 188, 106,   // green
@@ -108,7 +108,7 @@ DEFINE_GRADIENT_PALETTE(aqi_gp){
     255, 153, 0, 76};
 CRGBPalette16 aqi_p = aqi_gp;
 
-int pm25ToCaqi(int c)
+int pm2ToCaqi(float c)
 {
     if (c >= 0 && c < 15)
         return linear(25, 0, 15, 0, c);
@@ -124,7 +124,7 @@ int pm25ToCaqi(int c)
         return -1;
 }
 
-int pm10ToCaqi(int c)
+int pm10ToCaqi(float c)
 {
     if (c >= 0 && c < 25)
         return linear(25, 0, 25, 0, c);
@@ -140,7 +140,7 @@ int pm10ToCaqi(int c)
         return -1;
 }
 
-int pm25ToAqi(int c)
+int pm2ToAqi(float c)
 {
     if (c >= 0 && c < 12.1)
         return linear(50, 0, 12, 0, c);
@@ -162,7 +162,7 @@ int pm25ToAqi(int c)
         return -1;
 }
 
-int pm10ToAqi(int c)
+int pm10ToAqi(float c)
 {
     if (c >= 0 && c < 55)
         return linear(50, 0, 54, 0, c);
@@ -184,9 +184,9 @@ int pm10ToAqi(int c)
         return -1;
 }
 
-CRGB pmToColor(int pm25, int pm10)
+CRGB pmToColor(float pm2, float pm10)
 {
-    int aqi = max(pm25ToAqi(pm25), pm10ToAqi(pm10));
+    int aqi = max(pm2ToAqi(pm2), pm10ToAqi(pm10));
     if (aqi < 0)
         return CRGB::Black;
     else if (aqi <= 255)
@@ -198,14 +198,40 @@ CRGB pmToColor(int pm25, int pm10)
         return maroon;
 }
 
-CRGB pmToColor2(int pm25, int pm10)
+CRGB pmToColor2(float pm2, float pm10)
 {
-    int caqi = max(pm25ToCaqi(pm25), pm10ToCaqi(pm10));
+    int caqi = max(pm2ToCaqi(pm2), pm10ToCaqi(pm10));
     if (caqi < 0)
         return CRGB::Black;
     else
     {
         TBlendType blendType = LINEARBLEND;
         return ColorFromPalette(caqi_p, caqi, 255, blendType);
+    }
+}
+
+// dry - yellow
+// 30-55 ok - green
+// wet - blue 109,213,237
+
+DEFINE_GRADIENT_PALETTE(hum_gp){
+    0, 238, 194, 11,     // yellow
+    29, 238, 194, 11,    // yellow
+    30, 121, 188, 106,   // green
+    55, 121, 188, 106,   // green
+    56, 109, 213, 237,   // blue
+    255, 109, 213, 237}; // blue
+CRGBPalette16 hum_p = hum_gp;
+
+CRGB humToColor(int hum)
+{
+    if (hum >= 0 && hum <= 100)
+    {
+        TBlendType blendType = LINEARBLEND;
+        return ColorFromPalette(hum_p, hum, 255, blendType);
+    }
+    else
+    {
+        return CRGB::Black;
     }
 }

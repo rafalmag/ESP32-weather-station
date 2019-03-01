@@ -38,7 +38,8 @@ int pmsEnabledPin = 4; // white wire
 PmsCalc pmsCalc(pms);
 
 // fastled
-#include "FastLED.h" // FastLED library.
+#include "FastLED.h" // FastLED library
+#include "palettesFunctions.h"
 
 #if FASTLED_VERSION < 3001000
 #error "Requires FastLED 3.1 or later; check github for latest code."
@@ -131,14 +132,22 @@ void loop()
     lcd.setCursor(0, 3);
     lcd.printf("CO2 %4d ppm (%3d%%) ", adcCo2, co2Perc);
 
-    leds[0] = CRGB(0, 66, 26); // dark green
-    leds[1] = CRGB(0, 66, 26); // dark green
+    // Hum
+    leds[0] = humToColor(humidity);
+    leds[1] = leds[0];
+
     leds[2] = CRGB::Black;
-    leds[3] = CRGB(0, 255, 26);
-    leds[4] = CRGB(0, 255, 26);
+    
+    // pm
+    leds[3] = pmToColor(pmsCalc.getPm2(), pmsCalc.getPm10());
+    leds[4] = leds[3];
+
     leds[5] = CRGB::Black;
-    leds[6] = CRGB(120, 0, 0);
-    leds[7] = CRGB(120, 0, 0);
+    
+    // co2
+    leds[6] = co2ppmToColor(adcCo2);
+    leds[7] = leds[6];
+
     FastLED.show(); // Power managed display
     digitalWrite(LED, HIGH);
     delay(5000);
