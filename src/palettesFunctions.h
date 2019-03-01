@@ -38,6 +38,52 @@ CRGB co2ppmToColor(int ppm)
 // orange 242,147,5
 // red-pink 232,65,111
 
+// DEFINE_GRADIENT_PALETTE(pm25_gp){
+//     0, 121, 188, 106,  // green
+//     15, 121, 188, 106, // green
+//     16, 187,207,76,   // lime green
+//     30, 187,207,76,   // lime green
+//     31, 238,194,11,   // yellow
+//     55, 238,194,11,   // yellow
+//     56, 242,147,5,     // orange
+//     110, 242,147,5,    // orange
+//     111, 232,65,111,    // red-pink
+//     255, 232,65,111};   // red-pink
+// CRGBPalette16 pm25_p = pm25_gp;
+
+// DEFINE_GRADIENT_PALETTE(pm10_gp){
+//     0, 121, 188, 106,  // green
+//     25, 121, 188, 106, // green
+//     26, 187,207,76,   // lime green
+//     50, 187,207,76,   // lime green
+//     51, 238,194,11,   // yellow
+//     90, 238,194,11,   // yellow
+//     91, 242,147,5,     // orange
+//     180, 242,147,5,    // orange
+//     181, 232,65,111,    // red-pink
+//     255, 232,65,111};   // red-pink
+// CRGBPalette16 pm25_p = pm25_gp;
+
+DEFINE_GRADIENT_PALETTE(caqi_gp){
+    0, 121, 188, 106,   // green
+    25, 121, 188, 106,  // green
+    26, 187, 207, 76,   // lime green
+    50, 187, 207, 76,   // lime green
+    51, 238, 194, 11,   // yellow
+    75, 238, 194, 11,   // yellow
+    76, 242, 147, 5,    // orange
+    100, 242, 147, 5,   // orange
+    101, 232, 65, 111,  // red-pink
+    255, 232, 65, 111}; // red-pink
+CRGBPalette16 caqi_p = caqi_gp;
+
+// https://en.wikipedia.org/wiki/Air_quality_index
+int linear(int aqiHigh, int aqiLow, float concHigh, float concLow, float concentration)
+{
+    // https://en.cppreference.com/w/c/numeric/math/rint
+    return lrintf(((concentration - concLow) / (concHigh - concLow)) * (aqiHigh - aqiLow) + aqiLow);
+}
+
 /*
 AQI
 0 to 50  	Good	    Green   0,228,0
@@ -62,23 +108,36 @@ DEFINE_GRADIENT_PALETTE(aqi_gp){
     255, 153, 0, 76};
 CRGBPalette16 aqi_p = aqi_gp;
 
-// DEFINE_GRADIENT_PALETTE(aqi_gp){
-//     0, 121, 188, 106,  // green
-//     15, 121, 188, 106, // green
-//     16, 255, 255, 0,   // yellow
-//     35, 255, 255, 0,   // yellow
-//     36, 255, 153, 0,   // orange
-//     65, 255, 153, 0,   // orange
-//     66, 255, 0, 0,     // red
-//     150, 255, 0, 0,    // red
-//     255, 255, 0, 0};   // red
-// CRGBPalette16 aqi_p = aqi_gp;
-
-// https://en.wikipedia.org/wiki/Air_quality_index
-int linear(int aqiHigh, int aqiLow, float concHigh, float concLow, float concentration)
+int pm25ToCaqi(int c)
 {
-    // https://en.cppreference.com/w/c/numeric/math/rint
-    return lrintf(((concentration - concLow) / (concHigh - concLow)) * (aqiHigh - aqiLow) + aqiLow);
+    if (c >= 0 && c < 15)
+        return linear(25, 0, 15, 0, c);
+    else if (c >= 15 && c < 30)
+        return linear(50, 25, 30, 15, c);
+    else if (c >= 30 && c < 55)
+        return linear(75, 50, 55, 30, c);
+    else if (c >= 55 && c < 110)
+        return linear(100, 75, 110, 55, c);
+    else if (c >= 110)
+        return 101;
+    else
+        return -1;
+}
+
+int pm10ToCaqi(int c)
+{
+    if (c >= 0 && c < 25)
+        return linear(25, 0, 25, 0, c);
+    else if (c >= 25 && c < 50)
+        return linear(50, 25, 50, 25, c);
+    else if (c >= 50 && c < 95)
+        return linear(75, 50, 90, 50, c);
+    else if (c >= 90 && c < 180)
+        return linear(100, 75, 180, 90, c);
+    else if (c >= 180)
+        return 101;
+    else
+        return -1;
 }
 
 int pm25ToAqi(int c)
@@ -97,6 +156,8 @@ int pm25ToAqi(int c)
         return linear(400, 301, 350.4, 250.5, c);
     else if (c >= 350.5 && c < 500.5)
         return linear(500, 401, 500.4, 350.5, c);
+    else if (c >= 500.5)
+        return 500;
     else
         return -1;
 }
@@ -117,6 +178,8 @@ int pm10ToAqi(int c)
         return linear(400, 301, 504, 425, c);
     else if (c >= 505 && c < 605)
         return linear(500, 401, 604, 505, c);
+    else if (c >= 605)
+        return 500;
     else
         return -1;
 }
@@ -133,4 +196,16 @@ CRGB pmToColor(int pm25, int pm10)
     }
     else
         return maroon;
+}
+
+CRGB pmToColor2(int pm25, int pm10)
+{
+    int caqi = max(pm25ToCaqi(pm25), pm10ToCaqi(pm10));
+    if (caqi < 0)
+        return CRGB::Black;
+    else
+    {
+        TBlendType blendType = LINEARBLEND;
+        return ColorFromPalette(caqi_p, caqi, 255, blendType);
+    }
 }
