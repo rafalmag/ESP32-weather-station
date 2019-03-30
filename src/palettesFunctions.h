@@ -23,7 +23,7 @@ CRGB co2ppmToColor(int ppm)
     TBlendType blendType = LINEARBLEND;
     uint8_t index;
     if (ppm >= 2500)
-        index = 255;
+        index = 250;
     else if (ppm < 0)
         index = 0;
     else
