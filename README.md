@@ -22,3 +22,15 @@
 ## Reference:
 ![esp32_2](wemos-lolin-2.png "ESP32")
 ![esp32_1](wemos-lolin-1.png "ESP32")
+
+
+## Issue
+
+- cannot detect ESP32 from PC - no serial port
+
+Troubleshoot:
+- open case and check
+- disconnect BME280 and check
+- disconnect Neopixels and check
+- remove 5V PC-board and attach external 5V
+- do not use super-cap ?
