@@ -8,7 +8,7 @@
 - Neopixels - for status indication, connected to pin 2, 5V (to be coded later)
 - LCD 2004 (4 rows with 20 chars) connected through I2C Serial Interface Adapter Module PCF8574 (powered through 5V, so logic level converter had to be used for SDA and SCL)
 - 2N7000 for logic level converter (2pcs)
-- BC546 NPN transistor and photoresistor for automatic LCD brightness adjustment
+- BC546 NPN transistor and photoresistor (pin 39(VN) via 10k pull up to 3.3V resistor) for automatic LCD brightness adjustment
 
 ## Design decisions:
 - MH-Z14A has a high current draw, so the LCD is affected, I had to use 1F 5.5V capacitor - to be document
@@ -24,7 +24,7 @@
 ![esp32_1](wemos-lolin-1.png "ESP32")
 
 
-## Issue
+## Issues
 
 - cannot detect ESP32 from PC - no serial port
 

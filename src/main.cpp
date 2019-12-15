@@ -52,6 +52,10 @@ PmsCalc pmsCalc(pms);
 // Initialize LED array.
 struct CRGB leds[NUM_LEDS];
 
+// photoresistor ADC + LCD bright DAC
+esp_adc_cal_characteristics_t characteristics;
+#include <driver/dac.h>
+
 void bmeInit()
 {
     while (!bme.begin())
@@ -108,6 +112,13 @@ void setup()
     fill_solid(leds, NUM_LEDS, CRGB::Black);
 
     digitalWrite(LED, HIGH);
+
+    // photoresistor ADC + LCD bright DAC
+    // (same as in CO2)
+    esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_11, &characteristics);
+    // pin 39
+    adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11); //ADC_ATTEN_DB_11 = 0-3,6V (or 3.9V??)
+    dac_output_enable(DAC_CHANNEL_1);
 }
 
 void loop()
@@ -137,18 +148,50 @@ void loop()
     leds[1] = leds[0];
 
     leds[2] = CRGB::Black;
-    
+
     // pm
     leds[3] = pmToColor(pmsCalc.getPm2(), pmsCalc.getPm10());
     leds[4] = leds[3];
 
     leds[5] = CRGB::Black;
-    
+
     // co2
     leds[6] = co2ppmToColor(adcCo2);
     leds[7] = leds[6];
 
+    // photoresistor and brightness
+    // read 39(VN) photoresistor
+    int lightSenseMV = adc1_to_voltage(ADC1_CHANNEL_3, &characteristics);
+    // DebugPrintln(String("ADC = ") + lightSenseMV + "mv");
+
+    // lightSenseMV > 0 - very bright
+    int neopixelBrightness = 11;
+    int dacValue = 255;
+    // artificial lights
+    if (lightSenseMV > 1000)
+    {
+        neopixelBrightness = 8;
+        dacValue = 253;
+    }
+    // dim lights
+    if (lightSenseMV > 1500)
+    {
+        neopixelBrightness = 5;
+        dacValue = 250;
+    }
+    // night, no lights
+    if (lightSenseMV > 3000)
+    {
+        neopixelBrightness = 2;
+        dacValue = 245;
+    }
+    // DebugPrintln(String("DAC val = ") + dacValue);
+    // write A18/DAC1/25 to set the LCD brightness
+    dac_output_voltage(DAC_CHANNEL_1, dacValue);
+    FastLED.setBrightness(neopixelBrightness);
+
     FastLED.show(); // Power managed display
+
     digitalWrite(LED, HIGH);
     delay(5000);
 }
