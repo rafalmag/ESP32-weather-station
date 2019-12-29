@@ -27,6 +27,11 @@ Co2FromAdc co2FromAdc;
 
 //set the LCD address to 0x27 for a 20 chars and 4 line display
 LiquidCrystal_I2C lcd(0x27, 20, 4);
+// setting PWM properties
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 8;
+const int ledPwmPin = 25;//gpio25
 
 // PMS5003
 #include <PMS.h>
@@ -118,7 +123,9 @@ void setup()
     esp_adc_cal_get_characteristics(V_REF, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_11, &characteristics);
     // pin 39
     adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11); //ADC_ATTEN_DB_11 = 0-3,6V (or 3.9V??)
-    dac_output_enable(DAC_CHANNEL_1);
+    // dac_output_enable(DAC_CHANNEL_1);
+     ledcSetup(ledChannel, freq, resolution);
+     ledcAttachPin(ledPwmPin, ledChannel);
 }
 
 void loop()
@@ -166,28 +173,33 @@ void loop()
 
     // lightSenseMV > 0 - very bright
     int neopixelBrightness = 11;
-    int dacValue = 255;
+    int dutyCycle = 200;
+    // int dacValue = 255;
     // artificial lights
     if (lightSenseMV > 1000)
     {
         neopixelBrightness = 8;
-        dacValue = 253;
+        // dacValue = 253;
+        dutyCycle = 100;
     }
     // dim lights
     if (lightSenseMV > 1500)
     {
         neopixelBrightness = 5;
-        dacValue = 250;
+        // dacValue = 250;
+        dutyCycle = 50;
     }
     // night, no lights
     if (lightSenseMV > 3000)
     {
         neopixelBrightness = 2;
-        dacValue = 245;
+        // dacValue = 245;
+        dutyCycle = 10;
     }
     // DebugPrintln(String("DAC val = ") + dacValue);
     // write A18/DAC1/25 to set the LCD brightness
-    dac_output_voltage(DAC_CHANNEL_1, dacValue);
+    // dac_output_voltage(DAC_CHANNEL_1, dacValue);
+    ledcWrite(ledChannel, dutyCycle);
     FastLED.setBrightness(neopixelBrightness);
 
     FastLED.show(); // Power managed display
